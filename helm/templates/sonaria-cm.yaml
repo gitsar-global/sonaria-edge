@@ -1,0 +1,30 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: sonaria-cm
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: sonaria-{{ .Values.namespace }}
+data:
+  ASPNETCORE_ENVIRONMENT: {{ .Values.ASPNETCORE_ENVIRONMENT }}
+  # CompanyCode: cc_qa1
+  # ServerConfigPath: /home/sonaria/sonaria-config
+
+  #Specify Name of EdgeServer that uniquely identifies this server in Sonaria.
+  EdgeServerName: {{ .Values.namespace }} 
+  CompanyCode: {{ .Values.CompanyCode }}
+  ServerConfigPath: {{ .Values.ServerConfigPath_Linux }}
+  ASPNETCORE_URLS: http://0.0.0.0:80
+
+  #this is required by app container to access HttpPort/GrpcPort of Dapr Sidecar
+  DAPR-HTTP-PORT: "3500"
+  DAPR-GRPC-PORT: "50001"
+  #this is required by container to access IpAddress of DaprSidecar
+  EXTERNAL-DNSNAME-IP: localhost
+  Sonaria_Base_URL: {{ .Values.Sonaria_Base_URL }}
+  DataProcessBREUrl: http://sonaria-dataprocess-bre:30082
+  DataProcessEngineUrl: http://sonaria-dataprocess-engine:30081
+  DeviceActivityApiUrl: http://sonaria-dataserve-engine:30084
+  IoTOutboundApiUrl: http://sonaria-iot-outbound:30085
+
+

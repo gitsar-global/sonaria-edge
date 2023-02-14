@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sonariahubapp-{{ .Values.namespace }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: sonariahub-{{ .Values.namespace }}
+spec:
+  type: NodePort
+  ports:
+    - port: {{ .Values.DataIngestHub_Port }}    #service port that is exposed locally in browser
+      targetPort: {{ .Values.DataIngestHub_Port }}  #port of target Pod runinng your app
+      nodePort: 30080   #port on VM (Host machine) that will access service.
+      protocol: TCP
+      name: http
+    - port: 3500
+      targetPort: 3500
+      protocol: TCP
+      name: dapr-http
+    - port: 50001
+      targetPort: 50001
+      protocol: TCP
+      name: dapr-grpc
+    - name: sevenid
+      port: {{ .Values.SevenIDServer_Port }}
+      targetPort: {{ .Values.SevenIDServer_Port }}
+      nodePort: 30010   #port on VM (Host machine) that will access service. 
+      protocol: TCP
+  selector:
+    app: sonariahub-{{ .Values.namespace }}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonariahubapp-{{ .Values.namespace }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: sonariahub-{{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sonariahub-{{ .Values.namespace }}
+  template:
+    metadata:
+      labels:
+        app: sonariahub-{{ .Values.namespace }}
+      annotations:
+        dapr.io/enabled: "true"
+        dapr.io/app-id: "sonaria-hub-dapr"
+        dapr.io/app-port: "{{ .Values.DataIngestHub_Port }}"
+        dapr.io/config: "dapr-config"
+        dapr.io/log-as-json: "true"
+        dapr.io/dapr-grpc-port: "50001"
+        dapr.io/enable-api-logging: "true"
+        dapr.io/enable-mtls: "false"
+        # dapr.io/volume-mounts-rw: "https:/config/cert/https"
+    spec:
+      volumes:
+        - name: sonariaconfig
+          hostPath:
+            # https://kubernetes.io/docs/concepts/storage/volumes/file
+            # Linux: /home/yourusername/sonaria/host-mount-dir
+            path: {{ .Values.ServerConfigPath_Linux }}  #Local path mounted to K8s cluster, or Minikube
+            type: Directory
+      containers:
+        - image: lowrydev.azurecr.io/sonaria-hub-api:latest
+          name: sonaria-hub-api
+          imagePullPolicy: Always
+          volumeMounts:
+           - name: sonariaconfig
+             mountPath: {{ .Values.ServerConfigPath_Linux }}   #path visible to local pod
+          envFrom:
+            - configMapRef:
+                name: sonaria-cm
+            - secretRef:
+                name: sonaria-secrets
+          env:
+            - name: ASPNETCORE_URLS
+              value: "http://+:{{ .Values.DataIngestHub_Port }}"
+            - name: AutoConfigUpdate
+              value: "false"
+            # - name: DAPR-GRPC-PORT
+            #   value: "50001"
+            # - name: EXTERNAL-DNSNAME-IP
+            #   value: "host.minikube.internal"
+              # value: "https://+:443;http://+:80"
+            # - name: ASPNETCORE_HTTPS_PORT
+            #   value: "5001"
+          ports:
+            - containerPort: {{ .Values.DataIngestHub_Port }}
+            - containerPort: 3500
+            - containerPort: 50001
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: {{ .Values.DataIngestHub_Port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds : 5
+            failureThreshold : 3
+          readinessProbe:
+            httpGet:
+              path: /hc
+              port: {{ .Values.DataIngestHub_Port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds : 5
+            failureThreshold: 3
+      imagePullSecrets:
+        - name: registrysecret

@@ -1,0 +1,69 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: mqtt-protocol-v1-dataingest
+  namespace: {{ .Values.namespace }}
+spec:
+  type: bindings.mqtt
+  version: v1
+  metadata:
+  - name: url
+    value: mqtt://mqtt-external-{{ .Values.namespace }}:1883
+  - name: topic
+    value: Zebra/#
+  - name: consumerID
+    value: mqttx_560179240103
+  - name: qos
+    value: 1
+  - name: retain
+    value: false
+  - name: cleanSession
+    value: false
+  - name: backOffMaxRetries
+    value: 0
+scopes:
+- sonaria-hub-dapr
+
+---
+
+# kind: Service
+# apiVersion: v1
+# metadata:
+#   name: host-localhost
+#   namespace: {{ .Values.namespace }}
+# spec:
+#   type: ExternalName
+#   externalName: 10.0.0.1
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: mqtt-external-{{ .Values.namespace }}
+  namespace: {{ .Values.namespace }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - port: 1883
+      targetPort: 1883
+      #nodePort: 0
+      protocol: TCP
+      name: mqtt-external
+
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+  name: mqtt-external-{{ .Values.namespace }}
+  namespace: {{ .Values.namespace }}
+subsets:
+  -
+    addresses:
+      -
+        ip: "10.0.0.1"
+    ports:
+      -
+        port: 1883
+        name: "mqtt-external"

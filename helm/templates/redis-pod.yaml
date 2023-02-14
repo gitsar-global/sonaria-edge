@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: redis-{{ .Values.namespace }}
+    version: v1
+  name: redis-{{ .Values.namespace }}
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-{{ .Values.namespace }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: redis-{{ .Values.namespace }}
+    spec:
+      containers:
+        - name: redis
+          image: redis:6-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: 6379
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: redis-{{ .Values.namespace }}
+  name: redis-{{ .Values.namespace }}
+  namespace: {{ .Values.namespace }}
+spec:
+  type: NodePort
+  ports:
+    - port: 6379
+      targetPort: 6379
+      nodePort: 30379
+      protocol: TCP
+      name: redis
+  selector:
+    app: redis-{{ .Values.namespace }}

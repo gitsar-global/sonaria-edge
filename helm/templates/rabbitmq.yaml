@@ -1,0 +1,56 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: rabbitmq-{{ .Values.namespace }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: sonaria-{{ .Values.namespace }}
+    service: rabbitmq-{{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: rabbitmq-{{ .Values.namespace }}
+  template:
+    metadata:
+      labels:
+        app: sonaria-{{ .Values.namespace }}
+        service: rabbitmq-{{ .Values.namespace }}
+    spec:
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3-management-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+          - name: http
+            containerPort: 5672
+            protocol: TCP
+          - name: ui
+            containerPort: 15672
+            protocol: TCP
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: rabbitmq-{{ .Values.namespace }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: sonaria-{{ .Values.namespace }}
+    service: rabbitmq-{{ .Values.namespace }}
+spec:
+  type: NodePort
+  ports:
+    - name: data
+      port: 5672
+      targetPort: 5672
+      nodePort: 31111
+      protocol: TCP      
+    - name: ui
+      protocol: TCP
+      port: 15672
+      targetPort: 15672
+      nodePort: 31112
+  selector:
+    service: rabbitmq-{{ .Values.namespace }}

@@ -1,0 +1,28 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: sonariapubsub
+  namespace: {{ .Values.namespace }}
+spec:
+# Temporarily use Redis for pub/sub while waiting for https://github.com/dapr/components-contrib/issues/1372 to be released in 1.6.
+#If you have your own rabbitMQ, replace `rabbitmq:5672` with your own RabittMq host address e.g. localhost:6379,
+  #type: pubsub.redis
+  type: pubsub.rabbitmq
+  version: v1
+  metadata:
+  - name: host
+    value: "amqp://guest:guest@rabbitmq-{{ .Values.namespace }}:5672"
+    #value: "amqp://guest:guest@host.minikube.internal:5672"
+  - name: durable
+    value: "true"
+  - name: deletedWhenUnused
+    value: "false"
+  - name: autoAck
+    value: "false"
+  - name: reconnectWait
+    value: "0"
+  - name: concurrency
+    value: parallel
+  - name: deliveryMode
+    value: "2"
+

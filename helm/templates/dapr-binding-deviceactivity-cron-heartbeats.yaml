@@ -1,0 +1,15 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: cronv1updatehealthstatus
+  namespace: {{ .Values.namespace }}
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+  - name: route
+    value: /cronv1updatehealthstatus
+  - name: schedule
+    value: "@every 10s"
+scopes:
+  - sonaria-deviceactivity-dapr

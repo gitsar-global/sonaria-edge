@@ -1,0 +1,30 @@
+# ---
+
+# kind: Service
+# apiVersion: v1
+# metadata:
+#   name: rabbitmq-external-{{ .Values.namespace }}
+#   namespace: {{ .Values.namespace }}
+# spec:
+#   type: ClusterIP
+#   ports:
+#     - port: 5672
+#       targetPort: 5672
+#       protocol: TCP
+#       name: rabbitmq-external
+
+# ---
+# kind: Endpoints
+# apiVersion: v1
+# metadata:
+#   name: rabbitmq-external
+#   namespace: {{ .Values.namespace }}
+# subsets:
+#   -
+#     addresses:
+#       -
+#         ip: "192.168.1.37"
+#     ports:
+#       -
+#         port: 5672
+#         name: "rabbitmq-external"

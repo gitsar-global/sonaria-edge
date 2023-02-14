@@ -1,0 +1,52 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: amqp-v1-dataingest
+  namespace: {{ .Values.namespace }}
+spec:
+  type: bindings.rabbitmq
+  version: v1
+  metadata:
+  - name: host
+    value: amqp://lowry:password@1@amqp-external:5672/
+  - name: durable
+    value: true
+  - name: queueName
+    value: lowry.item.queue
+  - name: skipTLSVerify
+    value: true
+  - name: ttlInSeconds
+    value: 60
+scopes:
+- sonaria-hub-dapr
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: amqp-external
+  namespace: {{ .Values.namespace }}
+spec:
+  type: NodePort
+  ports:
+    - port: 5672
+      targetPort: 5672
+      protocol: TCP
+      name: amqp-external
+
+---
+kind: Endpoints
+apiVersion: v1
+metadata:
+  name: amqp-external
+  namespace: {{ .Values.namespace }}
+subsets:
+  -
+    addresses:
+      -
+        ip: "10.255.255.242"
+    ports:
+      -
+        port: 5672
+        name: "amqp-external"
